@@ -1,0 +1,409 @@
+---
+title: "R Notebook"
+output: 
+  html_notebook: 
+    highlight: tango
+---
+# Lab 1 - Dowloading R and RStudio - No new code associated with lab
+# Lab 2 - Working with Data in R
+```{r Working with Data in R, echo=FALSE}
+# This is a comment
+iris <- iris
+View(iris)
+
+View(x = iris)
+
+#Extract a single column
+iris$Sepal.Length
+
+#Save column as a separate variable
+sep_len <- iris$Sepal.Length
+
+#Run a function on a single column in df
+mean(x = iris$Sepal.Length)
+
+#Run a function on the 'sep_len' object
+mean(x = sep_len) #Output should be identical to output from line 14
+
+install.packages("tidyverse")
+library(tidyverse)
+
+#Use filter function in dplyr
+# Base R command: iris[iris$Sepal.Length <5, ]
+filter(iris, Sepal.Length < 5)
+
+#Save the filtered output as a new variable
+filtered_iris <- filter(iris, Sepal.Length < 5)
+
+#Filter the iris dataset
+# Base R command: iris[iris$Species == "setosa", ]
+filter(iris, Species == "setosa")
+
+#Filter iris dataset for the 'setosa' species and a 'Sepal.Length' less than 5
+# Base R command: iris[iris$Species == "setosa", ]
+filter(iris, Species == "setosa" & Sepal.Length < 5)
+
+
+#Use the mutate() function
+# Base R command: iris$new_data1 <- iris$Sepal.Length*2
+mutate(iris, new_data1 = Sepal.Length *2)
+
+#Add new columns 
+mutate(iris, new_data1 = Sepal.Length *2,
+       new_data2 = Sepal.Length/Sepal.Width) 
+
+
+#Use the select() function
+# Base R command: iris$Species
+select(iris, Species) #selects the Species column and maintains the data structure
+
+
+#Calculate the mean of Sepal.Length.
+# Base R command: mean(iris$Sepal.Length)
+summarise(iris, mean = mean(Sepal.Length))
+
+#Calculate the mean, standard deviation and variance of Sepal.Length simultaneously
+# Base R command: mean(iris$Sepal.Length); sd(iris$Sepal.Length); var(iris$Sepal.Length)
+summarise(iris, mean = mean(Sepal.Length),
+          sd = sd(Sepal.Length),
+          variance = var(Sepal.Length)) #calculates the mean, standard deviation and variance of Sepal.Length and assigns them to a specified name for easy identification
+
+
+#Use the arrange() function
+# arrange(iris, Sepal.Length). This does the same thing as below
+iris %>% arrange(Sepal.Length) # NOTE: ascending is default
+
+#Arrange data in descending order
+iris %>% arrange(desc(Sepal.Length)) # does the same thing as above but in descending order of Sepal.Length.
+
+```
+
+# Lab 3 - Plotting Sample Data Using ggplot
+
+# Lab 4 - Plotting Real Data Using ggplot
+
+# Lab 5 - Central Limit Theorem
+
+# Lab 6 - Normality and Sample Properties 1
+
+# Lab 7 - Normality and Sample Properties 2
+```{r Normality and Sample Properties 2, echo=FALSE}
+# Setup and Import ----
+library(car)
+library(pastecs)
+library(tidyverse)
+library(ggplot2)
+
+# setwd("~/Module_4_Assumptions_Correlation/")
+# Import data from the Allen Brain Institue 
+load("ABI.RData")
+source("functions.R")
+
+summary(ABI)
+# Histogram
+ggplot(data = ABI, mapping = aes(x = ptau)) + 
+  geom_histogram(mapping = aes(y = ..density..), bins = 30, fill = 'gray', color = 'black') + 
+  stat_function(fun = dnorm, args = list(mean = mean(ABI$ptau, na.rm = TRUE), sd = sd(ABI$ptau, na.rm = TRUE)), color = 'red')
+
+# Q-Q plot
+ggplot(data = ABI, mapping = aes(sample = ptau)) + 
+  geom_qq() + 
+  geom_qq_line()
+
+# Boxplot
+ggplot(data = ABI, mapping = aes(x = ptau)) + 
+  geom_boxplot() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())
+
+# Histogram
+ggplot(data = ABI, mapping = aes(x = ptau)) + 
+  geom_histogram(bins = 30, fill = 'gray', color = 'black') +
+  facet_wrap(~ struct, scales = "free")
+
+# Q-Q plot
+ggplot(data = ABI, mapping = aes(sample = ptau)) + 
+  geom_qq() + 
+  geom_qq_line() +
+  facet_wrap(~ struct, scales = "free")
+
+# Boxplot
+ggplot(data = ABI, mapping = aes(x = ptau)) + 
+  geom_boxplot() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  facet_wrap(~ struct, scales = "free")
+
+
+# Test Normality -----
+stat.desc.clean(dataset = ABI, variable = ptau)
+stat.desc.clean(dataset = ABI, variable = ptau, struct)
+
+# Transform to Normal distribution
+ABI2 <- ABI %>% 
+  mutate(ptau_sqrt = sqrt(ptau),
+         ptau_log = log(ptau)) %>% 
+  select(ID, struct, ptau, ptau_sqrt, ptau_log) %>% 
+  pivot_longer(cols = ptau:ptau_log,
+               names_to = "Measurement",
+               values_to = "Concentration")
+
+# Histogram
+ggplot(data = ABI2, mapping = aes(x = Concentration)) + 
+  geom_histogram(bins = 30, fill = 'gray', color = 'black') +
+  facet_wrap(~ struct * Measurement, scales = "free")
+
+# Q-Q plot
+ggplot(data = ABI2, mapping = aes(sample = Concentration)) + 
+  geom_qq() + 
+  geom_qq_line() +
+  facet_wrap(~ struct * Measurement, scales = "free")
+
+# Boxplot
+ggplot(data = ABI2, mapping = aes(x = Concentration)) + 
+  geom_boxplot() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  facet_wrap(~ struct * Measurement, scales = "free")
+
+stat.desc.clean(dataset = ABI2, variable = Concentration, struct, Measurement)
+
+# Homogeneity of Variance
+leveneTest(ptau ~ struct, data = ABI)
+
+
+mip_ABI <- ABI %>% 
+  mutate(mip_sqrt = sqrt(mip_1a),
+         mip_log = log(mip_1a)) %>% 
+  select(ID, struct, mip_1a, mip_sqrt, mip_log) %>% 
+  pivot_longer(cols = mip_1a:mip_log,
+               names_to = "Measurement",
+               values_to = "Concentration")
+
+# Histogram
+ggplot(data = mip_ABI, mapping = aes(x = Concentration)) + 
+  geom_histogram(bins = 30, fill = 'gray', color = 'black') +
+  facet_wrap(~ struct * Measurement, scales = "free")
+
+# Q-Q plot
+ggplot(data = mip_ABI, mapping = aes(sample = Concentration)) + 
+  geom_qq() + 
+  geom_qq_line() +
+  facet_wrap(~ struct * Measurement, scales = "free")
+
+# Boxplot
+ggplot(data = mip_ABI, mapping = aes(x = Concentration)) + 
+  geom_boxplot() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  facet_wrap(~ struct * Measurement, scales = "free")
+
+stat.desc.clean(dataset = mip_ABI, variable = Concentration, struct, Measurement)
+
+# Homogeneity of Variance
+leveneTest(mip_sqrt ~ struct, data = mip_ABI)
+
+```
+
+
+# Lab 8 - Correlation
+```{r Correlation, echo=FALSE}
+# Objective: Perform basic correlation analysis with base R cor function and review Pearson's, Spearman's, and Kendall's correlations.
+
+```
+
+
+# Lab 9 - Linear Regression 1
+```{r Lab 9. Loading pkgs and data}
+library(tidyverse)
+theme_set(theme_bw())
+setwd("./Module_5_Linear_Regression/")
+load("Module_5_Linear_Regression/framingham.RData")
+source("Module_3_CLT-and-Normality/functions.R")
+```
+
+```{r Lab 9. Getting to know your data}
+head(fhs)
+summary(fhs)
+
+# Transforming the data to make it easy to plot with facets
+fhs2 <- fhs %>% 
+  select(-gender) %>% 
+  pivot_longer(cols = age:glucose,
+               names_to = "Metric",
+               values_to = "Value")
+
+# Distribution of the variables
+ggplot(data = fhs2, mapping = aes(x = Value)) + 
+  geom_histogram(bins = 30, fill = 'gray', color = 'black') +
+  facet_wrap(~ Metric, scales = "free")
+
+# Relationship between the variables
+fhs3 <- fhs %>% 
+  select(-gender) %>% 
+  pivot_longer(cols = c(age, glucose),
+               names_to = "Metric",
+               values_to = "Value")
+
+ggplot(data = fhs3, mapping = aes(x = Value, y = sysBP)) +
+  geom_point() +
+  facet_wrap(~ Metric, scales = "free")
+```
+
+```{r Lab 9. Assumptions}
+# We will review this after the next class
+```
+
+```{r Lab 9. Simple linear regression}
+# Formula outcome (dependent) ~ predictor (independent), y ~ x
+
+# Model systolic BP as a function of age
+sysBPvsAge <- lm(formula = sysBP ~ age, data = fhs)
+
+summary(sysBPvsAge)
+
+# Subset the coefficients table by subsetting the model summary
+summary(sysBPvsAge)$coefficients
+# sysBPvsAge$coefficients is equivalent to sysBPvsAge[["coefficients"]] and stats::coef(sysBPvsAge)
+```
+
+
+# Lab 13. ANCOVA
+```{r Lab 13. ANCOVA}
+library(car)
+library(ez)
+library(rstatix)
+library(pastecs)
+library(QuantPsyc)
+library(tidyverse)
+setwd("./Module_7_ANOVA_GLM")
+
+load("/Users/claireps/GBSC_731_Intro-to-Biostats/Module_7_ANOVA_GLM/ANCOVA_Data.RData")
+source("/Users/claireps/GBSC_731_Intro-to-Biostats/Module_3_CLT-and-Normality/functions.R")
+```
+
+## Getting to Know Your Data
+```{r}
+summary(mouse.mass) 
+
+ggplot(data = mouse.mass, mapping = aes(x = group, y = bodyfat)) + 
+  geom_bar(mapping = aes(fill = group), stat = "summary", fun = "mean", show.legend = FALSE) + 
+  geom_errorbar(stat = "summary", fun.data = "mean_se", width = 0.3) + 
+  geom_jitter(width = 0.3) + 
+  labs(title = "Mean body fat in mice derived from different environments")
+
+ggplot(data = mouse.mass, mapping = aes(x = group, y = leanmass)) + 
+  geom_bar(mapping = aes(fill = group), stat = "summary", fun = "mean", show.legend = FALSE) + 
+  geom_errorbar(stat = "summary", fun.data = "mean_se", width = 0.3) + 
+  geom_jitter(width = 0.3) + 
+  labs(title = "Mean lean mass in mice derived from different environments")
+```
+
+## Test Assumptions
+```{r}
+## Homogeneity of Regression Slopes and Linearity ----
+ggplot(data = mouse.mass, aes(x = leanmass, y = bodyfat, color = group)) +
+  geom_point() + 
+  geom_smooth(method = 'lm', se = FALSE)
+
+
+mouse.mass %>% 
+  filter(group == 'wild') %>% 
+  lm(bodyfat ~ leanmass, data = .) %>% 
+  lm.beta()
+
+mouse.mass %>% 
+  filter(group == 'wild-der') %>% 
+  lm(bodyfat ~ leanmass, data = .) %>% 
+  lm.beta()
+
+mouse.mass %>% 
+  filter(group == 'lab') %>% 
+  lm(bodyfat ~ leanmass, data = .) %>% 
+  lm.beta()
+```
+
+## Running ANOVA
+### Regular ANOVA
+```{r}
+mod <- ezANOVA(data = mouse.mass,
+               dv = bodyfat,
+               between = group,
+               wid = idnum,
+               type = 3,
+               return_aov = TRUE)
+
+mod
+
+# Extracting residuals
+residuals <- tibble(group = mouse.mass$group,
+                    resid = resid(mod$aov))
+
+# Normality within groups
+ggplot(data = residuals, mapping = aes(x = resid)) + 
+  geom_histogram(bins = 20, fill = 'gray', color = 'black') +
+  facet_wrap(~ group, scales = "free")
+
+ggplot(data = residuals, mapping = aes(sample = resid)) +
+  geom_qq() +
+  geom_qq_line() +
+  facet_wrap(~ group, scales = "free")
+
+ggplot(data = residuals, mapping = aes(x = resid)) +
+  geom_boxplot() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  facet_wrap(~ group, scales = "free")
+
+stat.desc.clean(dataset = residuals, variable = resid, group)
+```
+
+### ANCOVA
+```{r}
+mod <- anova_test(data = mouse.mass,
+                  dv = bodyfat,
+                  between = group,
+                  covariate = leanmass,
+                  wid = idnum,
+                  type = 3)
+
+mod
+
+# Extracting residuals
+residuals <- tibble(group = mouse.mass$group,
+                    resid = resid(attributes(mod)$args$model))
+
+# Normality within groups
+ggplot(data = residuals, mapping = aes(x = resid)) + 
+  geom_histogram(bins = 20, fill = 'gray', color = 'black') +
+  facet_wrap(~ group, scales = "free")
+
+ggplot(data = residuals, mapping = aes(sample = resid)) +
+  geom_qq() +
+  geom_qq_line() +
+  facet_wrap(~ group, scales = "free")
+
+ggplot(data = residuals, mapping = aes(x = resid)) +
+  geom_boxplot() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  facet_wrap(~ group, scales = "free")
+
+stat.desc.clean(dataset = residuals, variable = resid, group)
+
+# Homogeneity of variance - wasn't tested by anova_test
+leveneTest(resid ~ group, data = residuals)
+```
+
