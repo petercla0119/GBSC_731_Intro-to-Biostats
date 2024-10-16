@@ -431,7 +431,14 @@ ggplot(data = ad2, mapping = aes(x = drug.tx, y = mmse)) +
 ```
 
 ```{r}
-mod <- ezANOVA(data = ad2,
+# Two-way ANOVA with interaction with the stats or car pkg
+mod <- stats::aov(mmse ~ health * drug.tx,
+  data = ad2)
+summary(mod)
+
+car::Anova(mod)
+
+mod <- ez::ezANOVA(data = ad2,
                dv = mmse,
                between = .(health, drug.tx),
                wid = ID,
