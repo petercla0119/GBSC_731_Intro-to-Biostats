@@ -481,3 +481,238 @@ ggplot(data = residuals, mapping = aes(x = resid)) +
 stat.desc.clean(dataset = residuals, variable = resid, group1, group2)
 ```
 
+# Lab 19 - Non-Parametric Tests
+
+## Setup
+
+```{r}
+library(car)
+library(pastecs)
+library(tidyverse)
+
+theme_set(theme_bw())
+
+load("/Users/claireps/GBSC_731_Intro-to-Biostats/Module_11/Non-Parametric-Data.RData")
+
+source("Module_3_CLT-and-Normality/functions.R")
+```
+
+## Data Exploration
+
+Non-Parametric-Data.Rdata. There are **3 different datasets**: `ad.2vars`, `ad.3vars`, and `noise.g` `ad.2vars` and `ad.3vars` are drug treatment designs. `noise.g` contains the `noise.level` variable which is a repeated measure \#### ad.2vars Appears that placebo had lower scores than the Low Dose group
+
+```{r}
+ggplot(data = ad.2vars, mapping = aes(x = drug.tx, y = mmse)) + 
+  geom_bar(mapping = aes(fill = drug.tx), stat = "summary", fun = "mean", show.legend = FALSE) + 
+  geom_errorbar(stat = "summary", fun.data = "mean_se", width = 0.3) + 
+  geom_jitter(width = 0.3) + 
+  labs(title = "Effect of Drug Treatment on mmse score") + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank())
+```
+
+### ad.3vars
+
+Appears that High Dose group had an even higher score in the ad.3vars dataset
+
+```{r}
+ggplot(data = ad.3vars, mapping = aes(x = drug.tx, y = mmse)) + 
+  geom_bar(mapping = aes(fill = drug.tx), stat = "summary", fun = "mean", show.legend = FALSE) + 
+  geom_errorbar(stat = "summary", fun.data = "mean_se", width = 0.3) + 
+  geom_jitter(width = 0.3) + 
+  labs(title = "Effect of Drug Treatment on mmse score") + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank())
+```
+
+### noise.g
+
+Appears that the “none” noise level had a higher score than the “high” noise level in the noise.g dataset
+
+```{r}
+ggplot(data = noise.g, mapping = aes(x = noise.level, y = score)) + 
+  geom_bar(mapping = aes(fill = noise.level), stat = "summary", fun = "mean", show.legend = FALSE) + 
+  geom_errorbar(stat = "summary", fun.data = "mean_se", width = 0.3) + 
+  geom_point(alpha = 0.5) +
+  geom_line(mapping = aes(group = ID), alpha = 0.5) + 
+  labs(title = "Effect of noise level on score for a perceptual task") + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank())
+```
+
+## Wilcoxon Rank Sum (Mann-Whitney) Test
+
+-   Non-parametric equivalent to the **independent t-test**
+    -   Tests the null hypothesis that the two samples likely derive from the same population (i.e. whether they have similar distributions).
+        -   Conceptually, tests the *difference in medians* between groups.\
+            **Mann-Whitney test** only assumes independence. `wilcox.test()` function takes the same inputs as the `t.test()` function If R version 4.3 or below, use: `wilcox.test(y ~ x, data = dataset, paired = FALSE)` If R version 4.4 or above, use:
+
+```{r}
+wilcox.test(mmse ~ drug.tx, data = ad.2vars)
+```
+
+> **Do the two samples appear to derive from different populations?** Yes, based on the p-value less than 0.05, we can reject the null hypothesis that the two samples are from the same population and therefore state that there is a significant difference in mmse scores as a function of the drug treatment group.
+
+## Wilcoxon Signed Rank Test
+
+-   Non-parametric equivalent to the **paired t-test** - Conceptually, tests if the *median difference* between groups is zero. If R version 4.3 or below, use:\
+    `wilcox.test(score ~ noise.level, data = noise.g, paired = TRUE)` If R version 4.4 or above, use:
+
+    ```{r}
+    # The x and y arguments here, correspond to the vector of scores for each sound level
+    wilcox.test(x = noise.g %>% 
+                  filter(noise.level == "none") %>% 
+                  pull(score),
+                y = noise.g %>% 
+                  filter(noise.level == "high") %>% 
+                  pull(score),
+                paired = TRUE)
+    ```
+
+> **Can we reject the null hypothesis that the median difference between noise levels is 0?** Yes! Based on the Wilcoxon Signed-Rank test, we can reject the null hypothesis and state that there is a significant difference in median score between noise levels.
+
+## Kruskal-Wallis Rank Sum Test
+
+**Kruskal-Wallis** only assumes independence
+
+```{r}
+kruskal.test(mmse ~ drug.tx, data = ad.3vars)
+
+```
+
+### Post-Hoc Analysis of a Kruskal-Wallis Test
+
+```{r}
+pairwise.wilcox.test(x = ad.3vars$mmse, g = ad.3vars$drug.tx, p.adjust.method = "bonferroni")
+```
+
+# Lab 21 - Survival analysis
+
+## Setup
+
+```{r}
+library(survival)
+library(survminer)
+library(ggfortify)
+library(tidyverse)
+
+load("/Users/claireps/GBSC_731_Intro-to-Biostats/Module_11//Ex_Survival.RData")
+```
+
+## Data Exploration
+
+Get understand distribution of data
+
+```{r}
+summary(surv1)
+summary(surv2)
+```
+
+## Survival Analysis
+
+### Kaplan-Meier Analysis
+
+```{r}
+surv_table <- Surv(time = surv1$seizuretime, event = surv1$status.num)
+
+km.fit <- surv_fit(formula = surv_table ~ drug, data = surv1)
+summary(km.fit, times = seq(from = 0, to = 35, by = 5))
+```
+
+#### Plot Kaplan-Meier Survival Curve
+
+```{r}
+ggsurvplot(fit = km.fit, data = surv1, # provide the model and the data
+           conf.int = TRUE, # plot shaded confidence intervals
+           surv.median.line = 'hv',  # plot horizontal and vertical lines at the median for each curve
+           pval = TRUE, # plot the overall p-value
+           censor.shape = 124, # change the shape for the censor mark
+           censor.size = 7) # change the size for the censor mark
+```
+
+**Test** whether there is a **difference in survival** - use `survdiff` function
+
+```{r}
+survdiff(formula = surv_table ~ drug, data = surv1)
+```
+
+Time at which **50%** of the group remains unaffected for **both** drug treatment levels - use `surv_median` function
+
+```{r}
+surv_median(fit = km.fit)
+```
+
+### Cox Regression Analysis
+
+Look at the effect of expression of two genes (a-beta and tau) on time-to-death in mice using the `surv2` dataset.
+
+#### Assumptions
+
+-   Independence
+-   Proportional hazards\
+
+Pass in the `ab40.tau.intxn` variable that describes the *interaction* of `tau` and `ab40`. This has 4 groups that describe mice that express ab40 only, tau only, neither, or both in a single column. surv_fit does not like having interaction terms in the formula, so the interaction was created as a separate variable.
+
+```{r}
+surv_table <- Surv(time = surv2$stoptime, event = surv2$status.num)
+
+surv.curv <- surv_fit(formula = surv_table ~ ab40.tau.intxn, data = surv2)
+
+ggsurvplot(fit = surv.curv, data = surv2,
+           conf.int = FALSE,
+           censor.shape = 124,
+           censor.size = 7,
+           legend.labs = c('neither', 'ab', 'tau', 'both'))
+```
+
+Create log minus log plot - Uses same `ggsurvplot` function call, but adds `fun = 'cloglog'` and `xlim = c(0.5,30)`. - `cloglog` transforms both axes and excludes 0 from the x-axis since 0 cannot be log transformed. - Why code limits the values on the x-axis to be from 0.5 to 30 (our maximum time in our experiment).
+
+```{r}
+ggsurvplot(surv.curv, data = surv2,
+           conf.int = FALSE,
+           censor.shape = 124,
+           censor.size = 7,
+           legend.labs = c('neither', 'ab', 'tau', 'both'),
+           fun = 'cloglog',
+           xlim = c(0.5, 30))
+```
+
+> There is no substantial crossover in our graph among any of our lines, so none of the levels need to be dropped. If there is a large amount of crossover, the analysis would need to be done on an individual factor basis, i.e. as a function of tau and ab40 independently.
+
+#### Statistical Test of Proportional Hazards
+
+To test the proportional hazards assumption statistically:\
+
+1\. First, create a Cox model using the `coxph` function. - This function behaves exactly like the `surv_fit` function from above, but the right hand side will have ab40, tau, and their interaction (denoted with the \* function).
+
+```{r}
+cox.m <- coxph(formula = surv_table ~ ab40*tau, data = surv2)
+```
+
+2\. For the statistical test, pass in the `cox.m` object into the `cox.zph` function.
+
+```{r}
+cox.zph(cox.m)
+```
+
+> This gives our test statistics and p-values for each of the individual terms in the model as well as a test for the overall model. Notice that here, none of the terms are significant, meaning the assumption of proportional hazards is met. If any of the terms are **significant**, they will **need to be removed** from the model. If there is a discrepancy between the graphical analysis and the statistical outcome, try making the model more conservative by removing a term (need to recheck the survival curves without that term to make sure there is not any significant crossing again), or consult a statistician.
+
+##### Running test
+
+View model summary of the cox model
+
+```{r}
+summary(cox.m)
+```
+
+> Two tables are included in the output along with a few tests at the bottom.
+>
+> -   The top table presents the main effect of `ab40` and `tau` on survival with their interaction.
+>
+>     -   For interpretation, focus on the `exp(coef)` column which gives the hazard ratio for that term, and the `Pr(>|z|)` column which gives the p-value for that effect.
+>
+> -   The second table repeats the hazard ratio, and shows the flipped hazard ratio with a 95% confidence interval (for the non-flipped hazard ratio).
+>
+>     -   At the bottom, we have results for the omnibus tests, which simply tell us if the overall model is significant or not.
+
+> The interpretation of this model is: if a mouse expresses tau, they have a significantly higher chance of dying than if a mouse does not express tau regardless of the expression of a-beta. The odds of death are around 4.32 times higher for tau expressing mice than non-expressing mice (this is the hazard ratio).
