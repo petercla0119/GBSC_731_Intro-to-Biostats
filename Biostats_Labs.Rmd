@@ -3,9 +3,19 @@ title: "R Notebook"
 output: 
   html_notebook: 
     highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false 
+    toc_depth: 6
+    number_sections: false
+    theme: lumen
+    df_print: paged
 ---
+
 # Lab 1 - Dowloading R and RStudio - No new code associated with lab
+
 # Lab 2 - Working with Data in R
+
 ```{r Working with Data in R, echo=FALSE}
 # This is a comment
 iris <- iris
@@ -87,6 +97,7 @@ iris %>% arrange(desc(Sepal.Length)) # does the same thing as above but in desce
 # Lab 6 - Normality and Sample Properties 1
 
 # Lab 7 - Normality and Sample Properties 2
+
 ```{r Normality and Sample Properties 2, echo=FALSE}
 # Setup and Import ----
 library(car)
@@ -213,15 +224,15 @@ leveneTest(mip_sqrt ~ struct, data = mip_ABI)
 
 ```
 
-
 # Lab 8 - Correlation
+
 ```{r Correlation, echo=FALSE}
 # Objective: Perform basic correlation analysis with base R cor function and review Pearson's, Spearman's, and Kendall's correlations.
 
 ```
 
-
 # Lab 9 - Linear Regression 1
+
 ```{r Lab 9. Loading pkgs and data}
 library(tidyverse)
 theme_set(theme_bw())
@@ -275,8 +286,8 @@ summary(sysBPvsAge)$coefficients
 # sysBPvsAge$coefficients is equivalent to sysBPvsAge[["coefficients"]] and stats::coef(sysBPvsAge)
 ```
 
-
 # Lab 13. ANCOVA
+
 ```{r Lab 13. ANCOVA}
 library(car)
 library(ez)
@@ -291,6 +302,7 @@ source("/Users/claireps/GBSC_731_Intro-to-Biostats/Module_3_CLT-and-Normality/fu
 ```
 
 ## Getting to Know Your Data
+
 ```{r}
 summary(mouse.mass) 
 
@@ -308,6 +320,7 @@ ggplot(data = mouse.mass, mapping = aes(x = group, y = leanmass)) +
 ```
 
 ## Test Assumptions
+
 ```{r}
 ## Homogeneity of Regression Slopes and Linearity ----
 ggplot(data = mouse.mass, aes(x = leanmass, y = bodyfat, color = group)) +
@@ -332,7 +345,9 @@ mouse.mass %>%
 ```
 
 ## Running ANOVA
+
 ### Regular ANOVA
+
 ```{r}
 mod <- ezANOVA(data = mouse.mass,
                dv = bodyfat,
@@ -369,6 +384,7 @@ stat.desc.clean(dataset = residuals, variable = resid, group)
 ```
 
 ### ANCOVA
+
 ```{r}
 mod <- anova_test(data = mouse.mass,
                   dv = bodyfat,
@@ -406,7 +422,9 @@ stat.desc.clean(dataset = residuals, variable = resid, group)
 # Homogeneity of variance - wasn't tested by anova_test
 leveneTest(resid ~ group, data = residuals)
 ```
-# Lab 15. Factorial ANOVA/Two-way independent ANOVA
+
+# Lab 15 - Factorial ANOVA/Two-way independent ANOVA
+
 ```{r}
 library(car)
 library(ez)
